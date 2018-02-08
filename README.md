@@ -1,2 +1,2 @@
-# towny-mapcrafter-leaflet-markers
+# towny-markers
 Generation of Leaflet markers inside Mapcrafter
