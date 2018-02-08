@@ -1,0 +1,10 @@
+{
+  "MYSQL_HOST": "localhost",
+  "MYSQL_USER": "root",
+  "MYSQL_PASSWORD": "qwer1234",
+  "MYSQL_DATABASE": "minecraft",
+  "TOWNS_TABLE": "towny_towns",
+  "TOWN_BLOCKS_TABLE": "towny_townblocks",
+  "OUTPUT": "../Minecraft/SpigotServer/data/markers.js",
+  "TOWNY_WORLD_NAME": "world"
+}
