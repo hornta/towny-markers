@@ -25,7 +25,7 @@ connection.query(`SELECT * FROM ${vars.TOWNS_TABLE}`, (error, results, fields) =
     const pos = results[i].spawn.split('#');
     townMarkers.push(`
       {
-        "pos" : [${parseInt(pos[1])}, ${parseInt(pos[2])}, ${parseInt(pos[3])}],
+        "pos" : [${parseInt(pos[1])}, ${parseInt(pos[3])}, ${parseInt(pos[2])}],
         "title" : "${results[i].name}"
       }
     `);
