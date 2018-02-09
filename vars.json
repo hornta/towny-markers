@@ -5,6 +5,13 @@
   "MYSQL_DATABASE": "minecraft",
   "TOWNS_TABLE": "towny_towns",
   "TOWN_BLOCKS_TABLE": "towny_townblocks",
+  "TOWNY_SHOW_PUBLIC_TOWNS": true,
+  "TOWNY_SHOW_NON_PUBLIC_TOWNS": true,
   "OUTPUT": "../Minecraft/SpigotServer/data/markers.js",
-  "TOWNY_WORLD_NAME": "world"
+  "TOWNY_WORLD_NAME": "world",
+  "DISPLAY_NAME_TOWN_BORDERS": "Stadsgränser",
+  "DISPLAY_NAME_TOWNS": "Städer",
+  "DISPLAY_NAME_OUTPOSTS": "Utposter",
+  "TOWN_BORDER_COLOR": "red",
+  "OUTPOST_BORDER_COLOR": "yellow"
 }

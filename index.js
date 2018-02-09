@@ -12,11 +12,22 @@ connection.connect();
 
 const groups = [];
 
-connection.query(`SELECT * FROM ${vars.TOWNS_TABLE}`, (error, results, fields) => {
+let query = `SELECT * FROM ${vars.TOWNS_TABLE} WHERE 1 = 1`;
+
+if(vars.TOWNY_SHOW_PUBLIC_TOWNS && vars.TOWNY_SHOW_NON_PUBLIC_TOWNS) {
+  query += ' AND (public = 1 OR public = 0)';
+} else if(vars.TOWNY_SHOW_NON_PUBLIC_TOWNS) {
+  query += ' AND public = 0';
+} else if(vars.TOWNY_SHOW_PUBLIC_TOWNS) {
+  query += ' AND public = 1';
+} else {
+  query += ' AND TRUE = FALSE';
+}
+
+connection.query(query, (error, results, fields) => {
   if(error) {
     throw error;
   }
-
 
   const wstream = fs.createWriteStream(vars.OUTPUT);
 
@@ -34,7 +45,7 @@ connection.query(`SELECT * FROM ${vars.TOWNS_TABLE}`, (error, results, fields) =
   let townMarkerGroup = `
     {
   		"id" : "towns",
-  		"name" : "Towns",
+  		"name" : "${vars.DISPLAY_NAME_TOWNS}",
   		"icon" : "town.png",
   		"iconSize" : [32, 32],
   		"showDefault" : true,
@@ -48,18 +59,45 @@ connection.query(`SELECT * FROM ${vars.TOWNS_TABLE}`, (error, results, fields) =
 
   groups.push(townMarkerGroup);
 
-
-  processTownBlocks(() => {
-    wstream.write('var MAPCRAFTER_MARKERS = [');
-    wstream.write(groups.join(','));
-    wstream.write('];');
-    wstream.end();
-    connection.end();
+  generateAreas({ 
+    outpost: false,
+    borderColor: vars.TOWN_BORDER_COLOR,
+    markerGroupId: 'town_areas'
+  }, () => {
+    generateAreas({ 
+      outpost: true,
+      borderColor: vars.OUTPOST_BORDER_COLOR,
+      markerGroupId: 'outpost_areas' 
+    }, () => {
+      wstream.write('var MAPCRAFTER_MARKERS = [');
+      wstream.write(groups.join(','));
+      wstream.write('];');
+      wstream.end();
+      connection.end();
+    });
   });
 });
 
-function processTownBlocks(callback) {
-  connection.query(`SELECT * FROM ${vars.TOWN_BLOCKS_TABLE}`, (error, results, fields) => {
+function generateAreas(options, callback) {
+  let query = `SELECT * FROM ${vars.TOWN_BLOCKS_TABLE} tb JOIN ${vars.TOWNS_TABLE} t ON tb.town = t.name WHERE 1 = 1`;
+
+  if(options.outpost) {
+    query += ' AND outpost = 1';
+  } else {
+    query += ' AND outpost = 0';
+  }
+
+  if(vars.TOWNY_SHOW_PUBLIC_TOWNS && vars.TOWNY_SHOW_NON_PUBLIC_TOWNS) {
+    query += ' AND (t.public = 1 OR t.public = 0)';
+  } else if(vars.TOWNY_SHOW_NON_PUBLIC_TOWNS) {
+    query += ' AND t.public = 0';
+  } else if(vars.TOWNY_SHOW_PUBLIC_TOWNS) {
+    query += ' AND t.public = 1';
+  } else {
+    query += ' AND TRUE = FALSE';
+  }
+
+  connection.query(query, (error, results, fields) => {
     const areas = [],
           hash = {};
 
@@ -87,100 +125,92 @@ function processTownBlocks(callback) {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
-          addArea(areas, points);
-          //points.push(`{ x: ${right}, z: ${bottom} }`);
-          //points.push(`{ x: ${right}, z: ${top} }`);
+          addArea(areas, points, options.borderColor);
         } else if(e && s && w) {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${top} }`);
-          addArea(areas, points);
-          //points.push(`{ x: ${right}, z: ${bottom} }`);
-          //points.push(`{ x: ${right}, z: ${top} }`);
+          addArea(areas, points, options.borderColor);
         } else if(n && s && w) {
           points = [];
           points.push(`{ x: ${right}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
-          addArea(areas, points);
-          //points.push(`{ x: ${right}, z: ${bottom} }`);
-          //points.push(`{ x: ${right}, z: ${top} }`);
+          addArea(areas, points, options.borderColor);
         } else if(n && e && w) {
           points = [];
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
-          addArea(areas, points);
-          //points.push(`{ x: ${right}, z: ${bottom} }`);
-          //points.push(`{ x: ${right}, z: ${top} }`);
+          addArea(areas, points, options.borderColor);
         } else if(n && s) {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
           points = [];
           points.push(`{ x: ${right}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(e && w) {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${top} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
           points = [];
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(n && e) {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(n && w) {
           points = [];
           points.push(`{ x: ${right}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(s && e) {
           points = [];
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${left}, z: ${top}}`);
           points.push(`{ x: ${right}, z: ${top} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(s && w) {
           points = [];
           points.push(`{ x: ${right}, z: ${bottom} }`);
           points.push(`{ x: ${right}, z: ${top} }`);
           points.push(`{ x: ${left}, z: ${top} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(s) {
           points = [];
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         }  else if(n) {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
           points.push(`{ x: ${right}, z: ${top} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(e) {
           points = [];
           points.push(`{ x: ${right}, z: ${top} }`);
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else if(w) {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${top} }`);
           points.push(`{ x: ${right}, z: ${bottom} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         } else {
           points = [];
           points.push(`{ x: ${left}, z: ${top} }`);
@@ -188,7 +218,7 @@ function processTownBlocks(callback) {
           points.push(`{ x: ${right}, z: ${bottom} }`);
           points.push(`{ x: ${left}, z: ${bottom} }`);
           points.push(`{ x: ${left}, z: ${top} }`);
-          addArea(areas, points);
+          addArea(areas, points, options.borderColor);
         }
       }
     }
@@ -196,8 +226,8 @@ function processTownBlocks(callback) {
 
       const group = `
       {
-        "id": "town_areas",
-        "name": "Towns Borders",
+        "id": "${options.markerGroupId}",
+        "name": "${vars.DISPLAY_NAME_TOWN_BORDERS}",
         "createMarker" : function(ui, groupInfo, markerInfo) {
             var latlngs = [];
 
@@ -219,9 +249,9 @@ function processTownBlocks(callback) {
   });
 }
 
-function addArea(areas, points) {
+function addArea(areas, points, color) {
   areas.push(`{
     "points": [${points.join(',')}],
-    "color": "red"
+    "color": "${color}"
   }`);
 }
